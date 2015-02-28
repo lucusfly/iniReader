@@ -18,6 +18,7 @@
 
 #define ANNOTATION '#'
 #define VECTORSPLIT ','
+#define PAIRSPLIT ':'
 #define SECTIONSTART '['
 #define SECTIONEND ']'
 
@@ -60,6 +61,9 @@ public:
     //以hash_set的结构解析配置信息,默认使用VECTORSPLIT(,)分割vector
     template<typename Key>
     set<Key> &getContainer(const string &section, const string &key, set<Key> &elems);
+    //以map的结构解析配置信息,默认使用(,)分割pair,(:)分割key value
+    template<typename Key1, typename Key2>
+    map<Key1, Key2> &getContainer(const string &section, const string& key, map<Key1, Key2> &elems);
     //以数值类型解析配置信息,包括bool,int,long,long long,double,float
     template<typename Key>
     Key getValue(const string &section, const string &key, Key ignore = 0);
@@ -81,7 +85,7 @@ vector<Key> &Ini::getContainer(const string &section, const string &key, vector<
         split(value, splitRes, VECTORSPLIT);
     
     elems.clear();
-    for (size_t i = 0; i < splitRes.size(); ++i) {
+    for (int i = 0; i < splitRes.size(); ++i) {
         elems.push_back(transform<Key>(splitRes[i]));
     }
     return elems;
@@ -96,9 +100,28 @@ set<Key> &Ini::getContainer(const string &section, const string &key, set<Key> &
         split(value, splitRes, VECTORSPLIT);
     
     elems.clear();
-    for (size_t i = 0; i < splitRes.size(); ++i) {
+    for (int i = 0; i < splitRes.size(); ++i) {
         elems.insert(transform<Key>(splitRes[i]));
     }
+    return elems;
+}
+
+template<typename Key1, typename Key2>
+map<Key1, Key2> &Ini::getContainer(const string &section, const string &key, map<Key1, Key2> &elems) {
+    set<string> pairInfo;
+    getContainer(section, key, pairInfo);
+    
+    for (set<string>::iterator it = pairInfo.begin(); it != pairInfo.end(); ++it) {
+        vector<string> splitRes;
+        split(*it, splitRes, PAIRSPLIT);
+
+        if (splitRes.size() != 2) {
+            continue;
+        }
+
+        elems.insert(make_pair(transform<Key1>(splitRes[0]), transform<Key2>(splitRes[1])));
+    }
+
     return elems;
 }
 
